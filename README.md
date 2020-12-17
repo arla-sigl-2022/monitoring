@@ -23,7 +23,7 @@ We found a nice all-in-one github repository that launches the latest ELK stack 
 
 To run ELK on your local machine:
 
-1. Clone [deviantony/docker-elk]() project inside this repository
+1. Clone [deviantony/docker-elk](https://github.com/deviantony/docker-elk) project inside this repository
 1. run the docker compose file in daemon mode: 
 ```sh
 cd docker-elk
