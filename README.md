@@ -1,16 +1,16 @@
 # Logging Workshop
 
-This workshop is for student of EPITA SIGL 2021.
+This workshop is for student of EPITA SIGL 2022.
 
-You will add some logging (not login!) to your arlaide web api.
+You will add some logging (not login!) to your garlaxy web api.
 Those logs to an ELK (Elastic, Logstash, Kibana) stack.
 
 Here are differents the different tools in actions:
 
-![arlaide logging workshop](docs/arlaide-logging-workshop.png)
+![garlaxy logging workshop](docs/garlaxy-logging-workshop.png)
 
 You will deploy all those tools on your localhost, and try out to visualize logs on Kibana,
-base on the usage of Arlaide on your localhost.
+base on the usage of Garlaxy on your localhost.
 
 ## Step 1: Setup a local ELK stack
 
@@ -39,7 +39,7 @@ Please don't perform any action yet, as we didn't send any logs.
 
 Once we send the first logs, kibana setup will be easier.
 
-## Step 2: Send logs from Arlaide web api
+## Step 2: Send logs from Garlaxy web api
 
 Let's add a new logger, connected to your local logstash.
 
@@ -49,7 +49,7 @@ You need to install the following node modules in your web api:
 1. `log4js` to have logging tagged with specific names. And different level of loggings (`trace`, `debug`, `info`, `warn` and `error`)
 1. `log4js-logstash` an adapter for `log4js` to send logs to a remote Logstash instance
 
-To do so, from your arlaide's `api/` folder, install modules:
+To do so, from your garlaxy's `api/` folder, install modules:
 ```sh
 # from api/
 nvm use
@@ -122,51 +122,42 @@ If you set your log level to `error` in the `categories.default.level` config, o
 
 You have just configured an `apiLogger` using `log4js.getLogger`. 
 
-Adapt your `/v1/help-request` api code in your `api/src/server.ts` file to add logging:
+Adapt your `/v1/contractor` api code in your `api/src/server.ts` file to add logging:
 
 ```ts
 // inside api/src/server.ts
 app.get(
-  "/v1/help-request",
+  "/v1/contractor",
   jwtCheck,
-  async (request: express.Request, response: express.Response) => {
-    // Getting value of page and limit query options:
-    // ex: http://<domain>/v1/help-request?page=1&limit=10
-    //  page == 1
-    //  limit == 10
+  async (req, res) => {
+
     try {
-      const { page, limit } = extractPageOptions(request.query);
+      const contractorList = await RDB.getContractors();
+      apiLogger.info('Success call on /v1/contractor', {page, limit});
+      res.send({ contractors: contractorList });
 
-      // Query the page of help requests from the fake database
-      const helpRequests: UserHelpRequest[] = await RDS.getHelpRequests(
-        page,
-        limit
-      );
-
-      apiLogger.info('Success call on /v1/help-request', {page, limit});
-      // sends the response back to the client, when node will be ready!
-      response.send(helpRequests);
     } catch (e) {
       // Something went wrong internally to the API,
       // so we are returning a 500 HTTP status
       response.statusCode = 500;
-      apiLogger.error('Error with /v1/help-request API', {error: e.message});
+      apiLogger.error('Error with /v1/contractor API', {error: e.message});
       response.send({ error: e.message });
     }
+    
   }
 );
 ```
 
 You just added an `info` log level when your query is a success:
 ```ts
-apiLogger.info('Success call on /v1/help-request', {page, limit});
+apiLogger.info('Success call on /v1/contractor', {page, limit});
 ```
 and and `error`log level when your query has failed for any bad reasons:
 ```ts
-apiLogger.error('Error with /v1/help-request API', {error: e.message});
+apiLogger.error('Error with /v1/contractor API', {error: e.message});
 ```
 
-This will help you to roughly know how many failed vs success requests you have on your help-request API.
+This will help you to roughly know how many failed vs success requests you have on your contractor API.
 
 Make sure your api compiles by running `nvm use && npm run build` from your api/ directory.
 
@@ -188,7 +179,7 @@ nvm use
 npm start
 ```
 
-Start your `docker-compose` from the arlaide-database workshop, to have your Postgres instance running.
+Start your `docker-compose` from the garlaxy-database workshop, to have your Postgres instance running.
 
 Now, navigate to your app and load some help requests.
 
