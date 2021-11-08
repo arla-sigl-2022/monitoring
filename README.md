@@ -1,4 +1,4 @@
-# Logging Workshop
+# Monitoring Workshop
 
 This workshop is for student of EPITA SIGL 2022.
 
