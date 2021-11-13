@@ -23,36 +23,38 @@ We found a nice all-in-one github repository that launches the latest ELK stack 
 
 To run ELK on your local machine:
 
-1. Clone [deviantony/docker-elk](https://github.com/deviantony/docker-elk) project inside this repository
+1. Clone [arla-sigl-2022/elk](https://github.com/arla-sigl-2022/elk) (generated from [deviantony/docker-elk](https://github.com/deviantony/docker-elk) on your computer (doesn't matter where).
 1. run the docker compose file in daemon mode: 
 ```sh
-cd docker-elk
+# from elk/
 docker-compose up -d
 ```
 > This may take a while to get all docker images (some hundreds of megabytes).
 
 Once your container are running, give Kibana a minute to start, and check if you can reach kibana from your browser on http://localhost:5601
 
-Credentials are `elastic/changeme`.
+Credentials are:
+- user: `elastic`
+- password: `changeme`
 
 Please don't perform any action yet, as we didn't send any logs.
 
 Once we send the first logs, kibana setup will be easier.
 
-## Step 2: Send logs from Garlaxy web api
+## Step 2: Configure logs for Garlaxy web API
 
 Let's add a new logger, connected to your local logstash.
 
 ### Install new dependencies
 
-You need to install the following node modules in your web api: 
+You need to install the following node modules in your web API: 
 1. `log4js` to have logging tagged with specific names. And different level of loggings (`trace`, `debug`, `info`, `warn` and `error`)
-1. `log4js-logstash` an adapter for `log4js` to send logs to a remote Logstash instance
+1. `log4js-logstash` an adapter for `log4js` to send logs to a logstash service
 
-To do so, from your garlaxy's `api/` folder, install modules:
+To do so, from your garlaxy's `backend/` folder, install modules:
 ```sh
-# from api/
-nvm use
+# from backend/
+nvm use v16
 npm i --save log4js log4js-logstash
 ```
 
@@ -62,44 +64,8 @@ Let's configure a new logger for your web api.
 
 First, you need to configure your logger to connect to your logstash.
 
-Add the following code snipet to your `api/src/server.ts` file:
-```ts
-// ...
-import log4js from "log4js";
-// ...
-
-// Configure logger
-const loggerConfig: log4js.Configuration = {
-  appenders: {
-    stdout: {
-      type: "console",
-      layout: {
-        type: "coloured",
-      },
-    },
-    logstash: {
-      type: "log4js-logstash",
-      host: "localhost",
-      port: 5000,
-    },
-  },
-  categories: {
-    default: {
-      appenders: ['stdout', 'logstash'],
-      level: 'trace'
-    }
-  },
-};
-
-log4js.configure(loggerConfig);
-
-// get a new logger instance tagged with `help-request-api`
-const apiLogger = log4js.getLogger("help-request-api");
-
-// app.use(...)
-// ...
-
-```
+From your group's repository:
+- [Adapt your backend/src/server.js](https://github.com/arla-sigl-2022/groupe-13/pull/8/commits/cca302de49ae14e8e31686080c8f61e1623645af#diff-36e2c2dd1e67a7419cef780285f514e743e48ac994a01526288acd31707e09ae): adds the logger configuration to your web API.
 
 This configure a new logger that will output logs on:
 - your console, thanks to the console appender
@@ -107,83 +73,44 @@ This configure a new logger that will output logs on:
 
 You have set in `categories` default behaviour to send all log's **level** to both appenders.
 
-Your differents log's **level** are:
-- `trace`: when you need to use it to track a request path, this is for very specific debug sessions
-- `debug`: when you want to debug some values in some functions
-- `info`: when you want to logs some information to help you understand usage of your app
-- `warning`: when something is wrong, but not critical for the user
-- `error`: when an error is thrown, and it's a bug.
+> Note:
+> Your differents log's **level** are:
+> - `trace`: when you need to use it to track a request path, this is for very specific debug sessions
+> - `debug`: when you want to debug some values in some functions
+> - `info`: when you want to logs some information to help you understand usage of your app
+> - `warning`: when something is wrong, but not critical for the user
+> - `error`: when an error is thrown, and it's a bug.
+> 
+> When you set your logging level to `trace` in your `log4js` config options, it means that **ALL** log levels from trace to error will be send to both `console` and `logstash` > appenders.
+> 
+> If you set your log level to `error` in the `categories.default.level` config, only logs with `error` level will be sent.
 
-When you set your logging level to `trace` in your `log4js` config options, it means that **ALL** log levels from trace to error will be send to both `console` and `logstash` appenders.
-
-If you set your log level to `error` in the `categories.default.level` config, only logs with `error` level will be sent.
-
-**How to use those log levels?**
-
-You have just configured an `apiLogger` using `log4js.getLogger`. 
-
-Adapt your `/v1/contractor` api code in your `api/src/server.ts` file to add logging:
-
-```ts
-// inside api/src/server.ts
-app.get(
-  "/v1/contractor",
-  jwtCheck,
-  async (req, res) => {
-
-    try {
-      const contractorList = await RDB.getContractors();
-      apiLogger.info('Success call on /v1/contractor', {page, limit});
-      res.send({ contractors: contractorList });
-
-    } catch (e) {
-      // Something went wrong internally to the API,
-      // so we are returning a 500 HTTP status
-      response.statusCode = 500;
-      apiLogger.error('Error with /v1/contractor API', {error: e.message});
-      response.send({ error: e.message });
-    }
-    
-  }
-);
-```
-
-You just added an `info` log level when your query is a success:
-```ts
-apiLogger.info('Success call on /v1/contractor', {page, limit});
-```
-and and `error`log level when your query has failed for any bad reasons:
-```ts
-apiLogger.error('Error with /v1/contractor API', {error: e.message});
-```
+Let's add some logger and logging to your `backend/src/server.js` services.
+- [Adapt backend/src/server.js](https://github.com/arla-sigl-2022/groupe-13/pull/8/commits/ec30914a8a6f151709563e0be500a143cccb64fd#diff-36e2c2dd1e67a7419cef780285f514e743e48ac994a01526288acd31707e09ae): Creates `ressourceLogger` and `contractorLogger` and logs all kind of possible scenarios for usage of the service (failure and success).
 
 This will help you to roughly know how many failed vs success requests you have on your contractor API.
-
-Make sure your api compiles by running `nvm use && npm run build` from your api/ directory.
 
 ### Step 3: Produce some logs
 
 Run your frontend and your api on your local machine.
 
-Run frontend in one shell:
+- Run frontend in one shell:
 ```sh 
 # from frontend/
-nvm use
+nvm use v16
 npm start
 ```
-
-Run api in another shell:
+- Run api in another shell:
 ```sh
-# from api/
-nvm use
-npm start
+# from backend/
+nvm use v16
+node src/server.js
 ```
+- Start your `docker-compose` from the database workshop, to have your Postgres instance running.
 
-Start your `docker-compose` from the garlaxy-database workshop, to have your Postgres instance running.
+Now, navigate to your app and load some contractor's comment.
 
-Now, navigate to your app and load some help requests.
-
-If you see some `INFO` or `ERROR` logs on your stdout, you can proceed to the next step.
+If you see some `INFO` or `ERROR` logs on your stdout of `backend/` shell, you can proceed to the next step.
 
 ### Step 4: Configure Kibana to read from elasticSearch
 
