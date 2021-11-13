@@ -90,6 +90,7 @@ Let's add some logger and logging to your `backend/src/server.js` services.
 
 This will help you to roughly know how many failed vs success requests you have on your contractor API.
 
+> Note: You can [check all steps 2 results from groupe 13's repo on this PR](https://github.com/arla-sigl-2022/groupe-13/pull/8)
 ### Step 3: Produce some logs
 
 Run your frontend and your api on your local machine.
