@@ -115,35 +115,29 @@ If you see some `INFO` or `ERROR` logs on your stdout of `backend/` shell, you c
 
 ### Step 4: Configure Kibana to read from elasticSearch
 
-Go to kibana dashboard on http://localhost:5301
+Go to kibana dashboard on http://localhost:5601
 
-Login using `elasctic/changeme` as credentials.
+Login with credentials:
+- user: `elasctic`
+- password: `changeme`
 
 You should see a welcome screen like:
 ![welcome](docs/welcome-elastic.png)
 
-Click on `Add data`
-
-Then on the sidebar menu icon, select the discover section:
-
+- Click on `Add data`
+- On the sidebar menu icon, select the discover section:
 ![discover](docs/discover-menu.png)
 
-Then, you should see that kibana noticed you have some logs in your elasticsearch, but you don't have any indexes yet to search on those logs.
+> Note: You should see that kibana noticed you have some logs in your elasticsearch, but you don't have any indexes yet to search on those logs.
+> Let's create them!
 
-Let's create them!
-
-Select `Create index` button:
+- Select `Create index` button:
 ![create-index](docs/create-index-pattern.png)
-
-For step 1 of index creation, enter `logstash` as index pattern name, and click `Next step`:
-![step-1](docs/step-1-logstash.png)
-
-For step 2 of index creation, you need to select the field that reprensents the log timestamp. Select @timestamp form the filed selector:
-![step-2](docs/step-2-timestamp.png)
-
-Now, click on `create index pattern` after selecting timestamp field.
-
-Go back to the sidebar menu > discover view.
+- Enter `logstash*` as index pattern name
+- Select `@timestamp` in the dropdown menu
+- Click `Create index pattern`:
+![step-1](docs/step-1-create-index-with-timestamp.png)
+- Go back to the sidebar menu > discover view.
 
 You should see your logs from previous step:
 ![discover-table](docs/discover-table-log.png)
